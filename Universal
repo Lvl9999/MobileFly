@@ -1,0 +1,101 @@
+--// Disclaimer \\-
+--// Script was not made by me, But I made the gui \\--
+
+repeat task.wait() until game:IsLoaded();
+task.wait(1) 
+local ScreenGui = Instance.new("ScreenGui");
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");
+local Main = Instance.new("Frame");
+Main.Size = UDim2.new(0, 150, 0, 40);
+Main.Position = UDim2.new(0.5, -75, 0.5, -20);
+Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40);
+Main.BorderSizePixel = 0;
+Main.Parent = ScreenGui;
+Main.Active = true;
+Main.Draggable = true;
+local MobileFly = Instance.new("TextLabel");
+MobileFly.Text = "Mobile Fly";
+MobileFly.Size = UDim2.new(1, 0, 0.4, 0);
+MobileFly.Position = UDim2.new(0, 0, 0, 0);
+MobileFly.BackgroundColor3 = Color3.fromRGB(50, 50, 50);
+MobileFly.BorderSizePixel = 0;
+MobileFly.Font = Enum.Font.SourceSansBold;
+MobileFly.FontSize = Enum.FontSize.Size18;
+MobileFly.TextColor3 = Color3.new(1, 1, 1);
+MobileFly.Parent = Main;
+local ButtonToggle = Instance.new("TextButton");
+ButtonToggle.Text = "OFF";
+ButtonToggle.Size = UDim2.new(0.4, 0, 0.4, 0);
+ButtonToggle.Position = UDim2.new(0.3, -ButtonToggle.Size.X.Offset / 2, 0.5, -ButtonToggle.Size.Y.Offset / 2);
+ButtonToggle.BackgroundColor3 = Color3.fromRGB(255, 70, 70);
+ButtonToggle.BorderSizePixel = 0;
+ButtonToggle.Font = Enum.Font.SourceSansBold;
+ButtonToggle.FontSize = Enum.FontSize.Size14;
+ButtonToggle.TextColor3 = Color3.new(1, 1, 1);
+ButtonToggle.Parent = Main;
+local toggle = false;
+local flying = false;
+local function FlyToggle()
+	toggle = not toggle;
+	if toggle then
+		ButtonToggle.Text = "ON";
+		ButtonToggle.BackgroundColor3 = Color3.fromRGB(80, 255, 80);
+		flying = true;
+	else
+		ButtonToggle.Text = "OFF";
+		ButtonToggle.BackgroundColor3 = Color3.fromRGB(255, 70, 70);
+		flying = false;
+	end
+end
+ButtonToggle.MouseButton1Click:Connect(FlyToggle);
+local player = game.Players.LocalPlayer;
+local character = player.Character or player.CharacterAdded:Wait();
+local humanoid = character:WaitForChild("Humanoid");
+local rootPart = character:WaitForChild("HumanoidRootPart");
+local flySpeed = 0;
+local flyMaxSpeed = 1000;
+local function init()
+	local mouse = player:GetMouse();
+	local bodyVelocity;
+	local function updateFlySpeed()
+		if (flySpeed < flyMaxSpeed) then
+			flySpeed = flySpeed + 1;
+		end
+	end
+	local function getMovementDirection()
+		local camera = game.Workspace.CurrentCamera;
+		local lookVector = camera.CFrame.LookVector;
+		local rightVector = camera.CFrame.RightVector;
+		local flyDirection = Vector3.new(0, 0, 0);
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+			flyDirection = flyDirection + lookVector;
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+			flyDirection = flyDirection - lookVector;
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+			flyDirection = flyDirection - rightVector;
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+			flyDirection = flyDirection + rightVector;
+		end
+		return flyDirection;
+	end
+	game:GetService("RunService").RenderStepped:Connect(function()
+		local flyDirection = getMovementDirection();
+		if flying then
+			updateFlySpeed();
+			if not bodyVelocity then
+				bodyVelocity = Instance.new("BodyVelocity", rootPart);
+				bodyVelocity.MaxForce = Vector3.new(20000000000, 20000000000, 20000000000);
+			end
+			game:GetService("TweenService"):Create(bodyVelocity, TweenInfo.new(0.5), {Velocity=(flyDirection * flySpeed)}):Play();
+		elseif bodyVelocity then
+			flySpeed = 0;
+			game:GetService("TweenService"):Create(bodyVelocity, TweenInfo.new(0.5), {Velocity=Vector3.new(0, 0, 0)}):Play();
+			bodyVelocity:Destroy();
+			bodyVelocity = nil;
+		end
+	end);
+end
+init();
